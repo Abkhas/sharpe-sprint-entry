@@ -30,6 +30,18 @@ lands in one hourly bucket instead of dripping into every hour.
 Deterministic: a pure function of the batches the harness sends — no clock, no
 randomness, no I/O. The grader executes it twice and the two action logs match.
 
+## How the protocol runs
+
+The harness opens with a hello handshake that carries the capital, the fee
+schedule, and the position caps; the bot answers from that hello alone and never
+assumes anything the hello did not state. After that, every decision is made from
+one batch of orders at a time: each batch lists the events since the last batch,
+the bot scores the coins in that batch, and it emits at most 16 orders for it.
+A fill for an order in a batch lands two slots later because of the slot latency,
+so a buy priced from a batch is always checked against the slippage limit the
+batch itself implies — the bot never chases a price that moved while the order
+was in flight.
+
 ## Local dev grade
 
 On the kit's 24h dev window (`grade-local --driver process`):
@@ -38,7 +50,7 @@ On the kit's 24h dev window (`grade-local --driver process`):
 |---|---:|---:|---:|---:|---:|---:|
 | net PnL (SOL) | **+0.07** | 0.00 | −0.02 | −9.44 | −3.99 | −0.50 |
 | hourly Sharpe | **+0.14** | — | — | — | — | −0.84 |
-| distinct mints | 45 | 0 | 5 | 75 | 199 | 354 |
+| distinct mints | 46 | 0 | 5 | 75 | 199 | 354 |
 | max drawdown | 0.8% | 0% | — | 95.4% | 49.0% | 5.4% |
 
 (Figures are the mean across the four fail keys; worst fail key +0.060 SOL. The
